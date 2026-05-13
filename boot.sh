@@ -8,6 +8,9 @@ helm repo update
 install_basic() {
   context="k3d-$1"
 
+  # Install Gateway API CRDs from the Standard channel.
+  kubectl apply --context "${context}" -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.5.1/standard-install.yaml
+
   helm install --kube-context "${context}" cert-manager oci://quay.io/jetstack/charts/cert-manager \
     --namespace cert-manager \
     --create-namespace \
@@ -18,7 +21,6 @@ install_basic() {
 
   helm install --kube-context "${context}" traefik traefik/traefik --namespace traefik --create-namespace --values traefik.yaml
 }
-
 
 k3d cluster create cluster1 \
   --port 80:80@loadbalancer \
@@ -38,4 +40,3 @@ k3d cluster create cluster2 \
 
 install_basic cluster1
 install_basic cluster2
-
