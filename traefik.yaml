@@ -1,0 +1,39 @@
+ports:
+  web:
+    port: 80
+    nodePort: 30000
+
+  websecure:
+    port: 443
+    nodePort: 30001
+
+api:
+  dashboard: true
+  insecure: false
+
+ingressRoute:
+  dashboard:
+    enabled: true
+    matchRule: Host(`dashboard.docker.localhost`)
+    entryPoints:
+      - web
+      - websecure
+
+providers:
+  kubernetesCRD:
+    enabled: true
+    allowExternalNameServices: true
+
+  kubernetesIngress:
+    enabled: false
+
+logs:
+  general:
+    level: INFO
+  access:
+    enabled: true
+
+metrics:
+  prometheus:
+    enabled: true
+
