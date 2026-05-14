@@ -1,0 +1,14 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: helloworld
+  namespace: sample
+spec:
+  routes:
+    - match: Host(`helloworld.docker.localhost`)
+      kind: Rule
+      services:
+        - name: helloworld
+          namespace: sample
+          port: 5000
+          nativeLB: true

@@ -16,8 +16,8 @@ if [ "sample" == "$1" ]; then
   kubectl apply --context=k3d-cluster2 -f samples/helloworld.yaml -l version=v2 -n sample
 
   # Add curl
-  kubectl apply --context=k3d-cluster1 -f curl.yaml -n sample
-  kubectl apply --context=k3d-cluster2 -f curl.yaml -n sample
+  kubectl apply --context=k3d-cluster1 -f samples/curl.yaml -n sample
+  kubectl apply --context=k3d-cluster2 -f samples/curl.yaml -n sample
 
   kubectl exec --context="k3d-cluster1" -n sample -c curl \
       "$(kubectl get pod --context="k3d-cluster1" -n sample -l \
