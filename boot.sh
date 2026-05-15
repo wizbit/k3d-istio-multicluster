@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 
+if [ "$CLUSTER_COUNT" == "" ]; then
+  CLUSTER_COUNT="${1:-2}"
+fi
+
+if [ "$CLUSTER_COUNT" -gt "3" ]; then
+  echo "A maximum cluster count of 3 is allowed"
+  exit 1
+fi
+
 helm repo add kedacore https://kedacore.github.io/charts
 help repo add traefik https://traefik.github.io/charts
 
@@ -29,14 +38,28 @@ k3d cluster create cluster1 \
   --k3s-arg "--disable=traefik@server:0" \
   --k3s-arg "--tls-san=k3d-cluster1-server-0@server:*" \
   --network k3d-mesh
-
-k3d cluster create cluster2 \
-  --port 9080:80@loadbalancer \
-  --port 9443:443@loadbalancer \
-  --port 9000:8000@loadbalancer \
-  --k3s-arg "--disable=traefik@server:0" \
-  --k3s-arg "--tls-san=k3d-cluster2-server-0@server:*" \
-  --network k3d-mesh
-
 install_basic cluster1
-install_basic cluster2
+
+if [ "$CLUSTER_COUNT" -ge "2" ]; then
+  k3d cluster create cluster2 \
+    --port 9080:80@loadbalancer \
+    --port 9443:443@loadbalancer \
+    --port 9000:8000@loadbalancer \
+    --k3s-arg "--disable=traefik@server:0" \
+    --k3s-arg "--tls-san=k3d-cluster2-server-0@server:*" \
+    --network k3d-mesh
+  install_basic cluster2
+fi
+
+if [ "$CLUSTER_COUNT" -eq "3" ]; then
+  k3d cluster create cluster3 \
+    --port 7080:80@loadbalancer \
+    --port 7443:443@loadbalancer \
+    --port 7000:8000@loadbalancer \
+    --k3s-arg "--disable=traefik@server:0" \
+    --k3s-arg "--tls-san=k3d-cluster3-server-0@server:*" \
+    --network k3d-mesh
+
+  install_basic cluster3
+fi
+

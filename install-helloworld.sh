@@ -1,58 +1,36 @@
 #!/usr/bin/env bash
 
-ISTIO_TYPE="$1"
+if [ "$CLUSTER_COUNT" == "" ]; then
+  CLUSTER_COUNT="${1:-2}"
+fi
 
-CTX_CLUSTER1="k3d-cluster1"
-CTX_CLUSTER2="k3d-cluster2"
-
-install_ambient() {
-    kubectl create --context="${CTX_CLUSTER1}" namespace sample
-    kubectl create --context="${CTX_CLUSTER2}" namespace sample
-
-  kubectl label --context="${CTX_CLUSTER1}" namespace sample istio.io/dataplane-mode=ambient
-  kubectl label --context="${CTX_CLUSTER2}" namespace sample istio.io/dataplane-mode=ambient
-
-  kubectl apply --context="${CTX_CLUSTER1}" -f samples/helloworld/helloworld.yaml -l service=helloworld -n sample
-  kubectl apply --context="${CTX_CLUSTER2}" -f samples/helloworld/helloworld.yaml -l service=helloworld -n sample
-
-#  kubectl apply --context="${CTX_CLUSTER1}" -f samples/helloworld/helloworld.yaml -l version=v1 -n sample
-  kubectl apply --context="${CTX_CLUSTER2}" -f samples/helloworld/helloworld.yaml -l version=v2 -n sample
-
-  kubectl apply --context="${CTX_CLUSTER1}" -f samples/curl/curl.yaml -n sample
-  kubectl apply --context="${CTX_CLUSTER2}" -f samples/curl/curl.yaml -n sample
-
-  kubectl apply --context="${CTX_CLUSTER1}" -f samples/traefik/helloworld.yaml -n sample
-}
-
-
-install_sidecar() {
-  kubectl create --context="${CTX_CLUSTER1}" namespace sample
-  kubectl create --context="${CTX_CLUSTER2}" namespace sample
-
-  kubectl label --context="${CTX_CLUSTER1}" namespace sample istio-injection=enabled
-  kubectl label --context="${CTX_CLUSTER2}" namespace sample istio-injection=enabled
-
-  kubectl apply --context="${CTX_CLUSTER1}" -f samples/helloworld/helloworld.yaml -l service=helloworld -n sample
-  kubectl apply --context="${CTX_CLUSTER2}" -f samples/helloworld/helloworld.yaml -l service=helloworld -n sample
-
-  kubectl apply --context="${CTX_CLUSTER1}" -f samples/helloworld/helloworld.yaml -l version=v1 -n sample
-  kubectl apply --context="${CTX_CLUSTER2}" -f samples/helloworld/helloworld.yaml -l version=v2 -n sample
-
-  kubectl apply --context="${CTX_CLUSTER1}" -f samples/curl/curl.yaml -n sample
-  kubectl apply --context="${CTX_CLUSTER2}" -f samples/curl/curl.yaml -n sample
-
-  sleep 10
-  kubectl exec --context="${CTX_CLUSTER1}" -n sample -c curl \
-      "$(kubectl get pod --context="${CTX_CLUSTER1}" -n sample -l \
-      app=curl -o jsonpath='{.items[0].metadata.name}')" \
-      -- curl -sS helloworld.sample:5000/hello
-}
-
-if [ "$ISTIO_TYPE" == "ambient" ]; then
-  install_ambient
-elif [ "$ISTIO_TYPE" == "sidecar" ]; then
-  install_sidecar
-else
-  printf "You must specify ambient or sidecar"
+if [ "$CLUSTER_COUNT" -gt "3" ]; then
+  echo "A maximum cluster count of 3 is allowed"
   exit 1
 fi
+
+install_helloworld() {
+  cluster="cluster$1"
+  context="k3d-$cluster"
+
+  kubectl create --context="${context}" namespace sample
+  kubectl label --context="${context}" namespace sample istio.io/dataplane-mode=ambient
+  kubectl apply --context="${context}" -f "samples/helloworld/helloworld-${cluster}.yaml" -n sample
+
+  kubectl apply --context="${context}" -f samples/curl/curl.yaml -n sample
+
+  istioctl --context "${context}" waypoint apply --name waypoint --for service -n sample --wait
+  kubectl --context "${context}" label svc helloworld -n sample istio.io/use-waypoint=waypoint
+  kubectl --context "${context}" label svc waypoint -n sample istio.io/global=true
+}
+
+install_helloworld "1"
+if [ "$CLUSTER_COUNT" -ge "2" ]; then
+  install_helloworld "2"
+fi
+
+if [ "$CLUSTER_COUNT" -eq "3" ]; then
+  install_helloworld "3"
+fi
+
+kubectl apply --context="k3d-cluster1" -f samples/traefik/helloworld.yaml -n sample

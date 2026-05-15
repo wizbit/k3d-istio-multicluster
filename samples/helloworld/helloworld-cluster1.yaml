@@ -16,7 +16,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: helloworld-v1
+  name: helloworld-1
   labels:
     app: helloworld
     version: v1
@@ -34,39 +34,31 @@ spec:
     spec:
       containers:
         - name: helloworld
-          image: docker.io/istio/examples-helloworld-v1:1.0
+          env:
+            - name: SERVICE_VERSION
+              value: v1
+          image: docker.io/istio/examples-helloworld-v1
           resources:
             requests:
               cpu: "100m"
-          imagePullPolicy: IfNotPresent #Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
 metadata:
-  name: helloworld-v2
-  labels:
-    app: helloworld
-    version: v2
+  name: helloworld
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: helloworld
-      version: v2
-  template:
-    metadata:
-      labels:
-        app: helloworld
-        version: v2
-    spec:
-      containers:
-        - name: helloworld
-          image: docker.io/istio/examples-helloworld-v2:1.0
-          resources:
-            requests:
-              cpu: "100m"
-          imagePullPolicy: IfNotPresent #Always
-          ports:
-            - containerPort: 5000
+  host: helloworld.sample.svc.cluster.local
+  trafficPolicy:
+    outlierDetection:
+      consecutive5xxErrors: 1
+      interval: 1s
+      baseEjectionTime: 1m
+    loadBalancer:
+      simple: ROUND_ROBIN
+      localityLbSetting:
+        enabled: true
+        failoverPriority:
+          - topology.istio.io/cluster
