@@ -29,6 +29,7 @@ install_basic() {
   helm upgrade --install --kube-context "${context}" traefik traefik/traefik --namespace traefik --create-namespace --values traefik.yaml
 }
 
+echo "Create Cluster 1"
 k3d cluster create cluster1 \
   --port 80:80@loadbalancer \
   --port 443:443@loadbalancer \
@@ -39,6 +40,7 @@ k3d cluster create cluster1 \
 install_basic cluster1
 
 if [ "$CLUSTER_COUNT" -ge "2" ]; then
+  echo "Create Cluster 2"
   k3d cluster create cluster2 \
     --port 9080:80@loadbalancer \
     --port 9443:443@loadbalancer \
@@ -50,6 +52,7 @@ if [ "$CLUSTER_COUNT" -ge "2" ]; then
 fi
 
 if [ "$CLUSTER_COUNT" -eq "3" ]; then
+  echo "Create Cluster 3"
   k3d cluster create cluster3 \
     --port 7080:80@loadbalancer \
     --port 7443:443@loadbalancer \
