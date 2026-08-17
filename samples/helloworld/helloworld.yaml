@@ -5,10 +5,11 @@ metadata:
   labels:
     app: helloworld
     service: helloworld
+    istio.io/global: "true"
 spec:
   ports:
-  - port: 5000
-    name: http
+    - port: 5000
+      name: http
   selector:
     app: helloworld
 ---
@@ -32,14 +33,14 @@ spec:
         version: v1
     spec:
       containers:
-      - name: helloworld
-        image: docker.io/istio/examples-helloworld-v1:1.0
-        resources:
-          requests:
-            cpu: "100m"
-        imagePullPolicy: IfNotPresent #Always
-        ports:
-        - containerPort: 5000
+        - name: helloworld
+          image: docker.io/istio/examples-helloworld-v1:1.0
+          resources:
+            requests:
+              cpu: "100m"
+          imagePullPolicy: IfNotPresent #Always
+          ports:
+            - containerPort: 5000
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -61,11 +62,11 @@ spec:
         version: v2
     spec:
       containers:
-      - name: helloworld
-        image: docker.io/istio/examples-helloworld-v2:1.0
-        resources:
-          requests:
-            cpu: "100m"
-        imagePullPolicy: IfNotPresent #Always
-        ports:
-        - containerPort: 5000
+        - name: helloworld
+          image: docker.io/istio/examples-helloworld-v2:1.0
+          resources:
+            requests:
+              cpu: "100m"
+          imagePullPolicy: IfNotPresent #Always
+          ports:
+            - containerPort: 5000

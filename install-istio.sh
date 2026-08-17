@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+ISTIO_TYPE="$1"
+
+if [ "$ISTIO_TYPE" != "ambient" ] && [ "$ISTIO_TYPE" != "sidecar" ]; then
+  printf "You must specify ambient or sidecar"
+  exit 1
+fi
+
 helm repo add istio https://istio-release.storage.googleapis.com/charts
 helm repo update
 
@@ -9,28 +16,13 @@ prelim_istio() {
   make -f ./Makefile.selfsigned.mk cluster2-cacerts
 }
 
-retry() {
-  local retries="$1" # First argument
-  local command="$2" # Second argument
-
-  # Run the command, and save the exit code
-  $command
-  local exit_code=$?
-
-  # If the exit code is non-zero (i.e. command failed), and we have not
-  # reached the maximum number of retries, run the command again
-  if [[ $exit_code -ne 0 && $retries -gt 0 ]]; then
-    retry $(($retries - 1)) "$command"
-  else
-    # Return the exit code from the command
-    return $exit_code
-  fi
-}
-
-install_istio() {
+install_istio_ambient() {
   cluster=$1
   context="k3d-$cluster"
   network=$2
+
+  kubectl label --context="${context}" namespace traefik istio.io/dataplane-mode=ambient
+
 
   kubectl create --context "${context}" namespace istio-system
   kubectl label --context "${context}" namespace istio-system "topology.istio.io/network=${network}"
@@ -86,10 +78,52 @@ spec:
 EOF
 }
 
+install_istio_sidecar() {
+  cluster=$1
+  context="k3d-$cluster"
+  network=$2
+
+  kubectl label --context="${context}" namespace traefik istio-injection=enabled
+
+  kubectl create --context "${context}" namespace istio-system
+  kubectl label --context "${context}" namespace istio-system "topology.istio.io/network=${network}"
+
+  kubectl create --context "${context}" secret generic cacerts -n istio-system --dry-run=client \
+        --from-file="${cluster}/ca-cert.pem" \
+        --from-file="${cluster}/ca-key.pem" \
+        --from-file="${cluster}/root-cert.pem" \
+        --from-file="${cluster}/cert-chain.pem" \
+        -o yaml | kubectl --context "${context}" apply -f -
+
+  cat <<EOF | istioctl install --context="${context}" -y -f -
+apiVersion: insall.istio.io/v1alpha1
+kind: IstioOperator
+spec:
+  values:
+    global:
+      platform: k3d
+      meshID: mesh1
+      multiCluster:
+        clusterName: ${cluster}
+      network: ${network}
+EOF
+
+  gen-eastwest-gateway.sh --network "${network}" | istioctl install --context="${context}" -y -f -
+  kubectl --context="${context}" apply -n istio-system -f ./expose-services.yaml
+}
+
 prelim_istio
 
-install_istio cluster1 network1
-install_istio cluster2 network2
+if [ "$ISTIO_TYPE" == "ambient" ]; then
+  install_istio_ambient cluster1 network1
+  install_istio_ambient cluster2 network2
+else
+  install_istio_sidecar cluster1 network1
+  install_istio_sidecar cluster2 network2
+
+  kubectl --context="k3d-cluster1" apply -n istio-system -f ./expose-services.yaml
+  kubectl --context="k3d-cluster2" apply -n istio-system -f ./expose-services.yaml
+fi
 
 cluster1IP=$(docker inspect k3d-cluster1-server-0 | jq -r '.[0].NetworkSettings.Networks."k3d-mesh".IPAddress')
 cluster2IP=$(docker inspect k3d-cluster2-server-0 | jq -r '.[0].NetworkSettings.Networks."k3d-mesh".IPAddress')
@@ -120,3 +154,5 @@ istioctl create-remote-secret \
   --name=cluster2 \
   --server="https://${cluster2IP}:6443" | \
   kubectl apply -f - --context="k3d-cluster1"
+
+istioctl remote-clusters --context="k3d-cluster1"
