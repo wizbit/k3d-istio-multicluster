@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
-if [ "$CLUSTER_COUNT" == "" ]; then
-  CLUSTER_COUNT="${1:-2}"
-fi
+CLUSTER_COUNT="${1:-1}"
 
 if [ "$CLUSTER_COUNT" -gt "3" ]; then
   echo "A maximum cluster count of 3 is allowed"
