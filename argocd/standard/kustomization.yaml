@@ -6,4 +6,3 @@ resources:
 
 patches:
   - path: argocd-cmd-params-cm-patch.yaml
-#  - path: local-git.yaml

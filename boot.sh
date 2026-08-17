@@ -30,7 +30,11 @@ precheck
 initializeIstio
 
 for ((i = 1 ; i <= "$CLUSTER_COUNT" ; i++ )); do
-  createCluster "cluster$i" "$VOLUME"
+  if [ "$i" == "1" ]; then
+    createClusterWithHostPorts "cluster$i" "$VOLUME" 80 443 8000
+  else
+    createCluster "cluster$i" "$VOLUME"
+  fi
   installIstio "cluster$i" "network$i"
 done
 
@@ -38,7 +42,7 @@ kubectl config use-context k3d-cluster1
 
 connectIstioClusters "$CLUSTER_COUNT"
 
-deployArgoCD argocd 8080
+deployArgoCD argocd 8080 "$VOLUME"
 addClusters "$CLUSTER_COUNT"
 
 connectIstioCheck "$CLUSTER_COUNT"

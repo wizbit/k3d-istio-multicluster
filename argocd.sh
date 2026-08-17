@@ -3,8 +3,15 @@
 deployArgoCD() {
   ns="$1"
   port="$2"
+  volume="$3"
 
   manifestDir=$(find . -name "argocd" -type d -print -quit)
+  if [ "$volume" == "" ]; then
+    manifestDir="$manifestDir/standard"
+  else
+    manifestDir="$manifestDir/local"
+  fi
+
   kubectl create ns "$ns" || true
   kubectl apply -n "$ns" -k "$manifestDir" --server-side --force-conflicts
 
