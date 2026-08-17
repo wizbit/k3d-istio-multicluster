@@ -17,9 +17,7 @@ Install the following before starting
 ## To run
 
 ```shell
-./boot.sh
-./install-istio.sh
-./install-helloworld.sh
+./boot.sh <number-of-clusters>
 ```
 
 ## To tear down
@@ -30,11 +28,12 @@ This will delete both clusters
 ./destroy.sh
 ```
 
-## To run 1-3 clusters
+## Install Helloworld example
+
+This will install the helloworld example into *n* clusters. This example contains a deployment, a global service and a
+failover to other clusters. As well as a curl service for testing connection. It also installs a Traefik IngressRoute
+into the first cluster ([helloworld.docker.localhost](https://helloworld.docker.localhost)).
 
 ```shell
-export CLUSTER_COUNT=3 # number of clusters
-./boot.sh
-./install-istio.sh
-./install-helloworld.sh
+./install-helloworld.sh <number-of-clusters>
 ```
