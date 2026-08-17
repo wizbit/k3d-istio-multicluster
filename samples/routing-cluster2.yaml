@@ -8,6 +8,7 @@ metadata:
 spec:
   ports:
     - port: 80
+      name: http
   selector:
     app: whoami
 ---
@@ -31,3 +32,4 @@ spec:
           image: traefik/whoami
           ports:
             - containerPort: 80
+              name: http

@@ -11,37 +11,6 @@ spec:
   selector:
     app: whoami  # Matches the labels in your ServiceEntry endpoints
 ---
-apiVersion: networking.istio.io/v1beta1
-kind: ServiceEntry
-metadata:
-  name: whoami-se
-  namespace: whoami
-spec:
-  exportTo:
-    - "*"
-  hosts:
-    - whoami.whoami.svc.cluster.local
-  location: MESH_INTERNAL
-  ports:
-    - number: 80
-      name: http
-      protocol: HTTP
-  resolution: STATIC
----
-apiVersion: networking.istio.io/v1beta1
-kind: WorkloadEntry
-metadata:
-  name: whoami-remote
-  namespace: whoami
-spec:
-  address: 172.20.0.6  # Cluster 2 East-West Gateway
-  network: network2
-  labels:
-    app: whoami        # This matches the Service selector
-  serviceAccount: whoami
-  ports:
-    http: 15008        # HBONE tunnel port
----
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
@@ -62,17 +31,54 @@ spec:
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: helloworld
-  namespace: sample
+  name: whoami2
+  namespace: whoami
 spec:
   entryPoints:
+    - web
     - websecure
   routes:
-    - match: Host(`hello.docker.localhost`)
+    - match: Host(`whoami2.docker.localhost`)
       kind: Rule
       services:
-        - name: helloworld
-          port: 5000
+        - name: whoami2
+          port: 80
+          nativeLB: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: whoami2
+  namespace: whoami
+spec:
+  ports:
+    - port: 80
+      targetPort: 80
+      name: http
+  selector:
+    app: whoami2  # Matches the labels in your ServiceEntry endpoints
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: whoami2
+  namespace: whoami
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: whoami2
+  template:
+    metadata:
+      labels:
+        app: whoami2
+    spec:
+      containers:
+        - name: whoami
+          image: traefik/whoami
+          ports:
+            - containerPort: 80
+              name: http
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
