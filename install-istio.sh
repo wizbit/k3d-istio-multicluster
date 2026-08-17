@@ -160,11 +160,15 @@ if [ "$CLUSTER_COUNT" -ge "2" ]; then
   echo "Cluster 1 check"
   istioctl remote-clusters --context="k3d-cluster1"
 
-  echo ""
-  echo "Cluster 2 check"
-  istioctl remote-clusters --context="k3d-cluster2"
+  if [ "$CLUSTER_COUNT" -ge "2" ]; then
+    echo ""
+    echo "Cluster 2 check"
+    istioctl remote-clusters --context="k3d-cluster2"
 
-  echo ""
-  echo "Cluster 3 check"
-  istioctl remote-clusters --context="k3d-cluster3"
+    if [ "$CLUSTER_COUNT" -eq "3" ]; then
+      echo ""
+      echo "Cluster 3 check"
+      istioctl remote-clusters --context="k3d-cluster3"
+    fi
+  fi
 fi
