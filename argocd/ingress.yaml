@@ -1,0 +1,21 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: argocd-server
+  namespace: argocd
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: Host(`argocd.docker.localhost`)
+      kind: Rule
+      services:
+        - name: argocd-server
+          port: 80
+    - match: Host(`argocd.docker.localhost`) && Header(`Content-Type`, `application/grpc`)
+      kind: Rule
+      services:
+        - name: argocd-server
+          port: 80
+          scheme: h2c

@@ -31,4 +31,4 @@ if [ "$CLUSTER_COUNT" -eq "3" ]; then
   install_helloworld "3"
 fi
 
-kubectl apply --context="k3d-cluster1" -f samples/traefik/helloworld.yaml -n sample
+kubectl apply --context="k3d-cluster1" -f samples/traefik/ingress.yaml -n sample
