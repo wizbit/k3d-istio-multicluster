@@ -19,6 +19,7 @@ Install the following before starting
 ```shell
 ./boot.sh
 ./install-istio.sh
+./install-helloworld.sh
 ```
 
 ## To tear down
@@ -27,4 +28,13 @@ This will delete both clusters
 
 ```shell
 ./destroy.sh
+```
+
+## To run 1-3 clusters
+
+```shell
+export CLUSTER_COUNT=3 # number of clusters
+./boot.sh
+./install-istio.sh
+./install-helloworld.sh
 ```
