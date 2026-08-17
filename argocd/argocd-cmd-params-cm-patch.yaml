@@ -7,3 +7,11 @@ data:
   server.insecure: "true"
   controller.status.processors: "20"
   controller.operation.processors: "10"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+
+data:
+  cluster.inClusterEnabled: "false"

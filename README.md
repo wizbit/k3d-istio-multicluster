@@ -1,8 +1,10 @@
 # K3d Istio MultiCluster
 
-This repo contains simple scripts to boot two k3d clusters with Istio, Traefik, Keda & Cert Manager.
+This repo contains simple scripts to boot one or more k3d clusters with Istio & ArgoCD.
 
-It also connects the two clusters in multi-primary istio setup.
+It also connects all the clusters in multi-primary istio ambient mode.
+
+It installs ArgoCD only into the primary cluster, for a hub-spoke setup.
 
 ## Prerequisites
 
@@ -17,23 +19,20 @@ Install the following before starting
 ## To run
 
 ```shell
-./boot.sh <number-of-clusters>
+./boot.sh -c <number-of-clusters>
 ```
 
 ## To tear down
 
-This will delete both clusters
+This will delete all clusters
 
 ```shell
 ./destroy.sh
 ```
 
-## Install Helloworld example
+## Demo projects
 
-This will install the helloworld example into *n* clusters. This example contains a deployment, a global service and a
-failover to other clusters. As well as a curl service for testing connection. It also installs a Traefik IngressRoute
-into the first cluster ([helloworld.docker.localhost](https://helloworld.docker.localhost)).
-
+[Bootstrap cluster with Traefik, Cert-Manager & Keda](https://github.com/wizbit/k8s-bootstrap)
 ```shell
-./install-helloworld.sh <number-of-clusters>
+kubectl apply -f https://raw.githubusercontent.com/wizbit/k8s-bootstrap/refs/heads/main/bootstrap/system.yaml
 ```
